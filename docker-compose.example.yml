@@ -1,0 +1,9 @@
+services:
+  midea-portasplit-bridge:
+    build: .
+    container_name: midea-portasplit-bridge
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+
