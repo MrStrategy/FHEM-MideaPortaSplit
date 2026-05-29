@@ -52,7 +52,7 @@ Build and run the bridge on the Docker host:
 ```sh
 git clone https://github.com/MrStrategy/FHEM-MideaPortaSplit.git
 cd FHEM-MideaPortaSplit
-docker build -t fhem-midea-portasplit:0.2.1 -t fhem-midea-portasplit:latest .
+docker build -t fhem-midea-portasplit:0.2.2 -t fhem-midea-portasplit:latest .
 cp .env.example .env
 cp deploy/rpi/docker-compose.yml docker-compose.yml
 ```
@@ -82,6 +82,8 @@ cp fhem/70_MideaPortaSplit.pm /path/to/fhem/FHEM/
 ```text
 define midea.portasplit MideaPortaSplit http://10.0.0.80:8765
 attr midea.portasplit room Klima
+attr midea.portasplit devStateIcon .*:noIcon:noFhemwebLink
+attr midea.portasplit webCmd target_temperature:mode:fan_speed
 ```
 
 For an RPi at `10.0.0.80`, a ready-to-use example is in:
@@ -128,6 +130,10 @@ offline
 off | 24.0°C indoor
 cool | 26.0°C -> 22.0°C | eco silent | 194 W
 ```
+
+The module defaults `devStateIcon` to text display and `webCmd` to
+`target_temperature:mode:fan_speed`, so FHEMWEB does not render it as a generic
+on/off lamp.
 
 ## Configuration
 

@@ -14,9 +14,11 @@ our $readingFnAttributes;
 our %defs;
 our $init_done;
 
-my $MideaPortaSplit_Version = '0.2.1';
+my $MideaPortaSplit_Version = '0.2.2';
 my $MideaPortaSplit_DefaultInterval = 30;
 my $MideaPortaSplit_DefaultTimeout = 8;
+my $MideaPortaSplit_DefaultWebCmd = 'target_temperature:mode:fan_speed';
+my $MideaPortaSplit_DefaultDevStateIcon = '.*:noIcon:noFhemwebLink';
 
 my %MideaPortaSplit_SetMap = (
   on                 => { field => 'power', value => 'on', noArg => 1 },
@@ -68,6 +70,8 @@ sub MideaPortaSplit_Define {
   $hash->{BASE_URL} = $baseUrl;
   $hash->{VERSION} = $MideaPortaSplit_Version;
   $hash->{INTERVAL} = defined($interval) ? $interval : $MideaPortaSplit_DefaultInterval;
+  $hash->{webCmd} = $MideaPortaSplit_DefaultWebCmd;
+  $hash->{devStateIcon} = $MideaPortaSplit_DefaultDevStateIcon;
 
   return 'interval must be numeric and greater than 0'
     if !looks_like_number($hash->{INTERVAL}) || $hash->{INTERVAL} <= 0;
@@ -546,6 +550,9 @@ sub MideaPortaSplit_UrlEncode {
       HTTP timeout in seconds. Default: 8.</li>
     <li><code>disable</code>, <code>disabledForIntervals</code><br>
       Disable polling and control.</li>
+    <li><code>devStateIcon</code>, <code>webCmd</code><br>
+      The module defaults these to text-style state display and compact
+      temperature/mode/fan controls in FHEMWEB.</li>
     <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
   </ul>
 </ul>
@@ -656,6 +663,10 @@ sub MideaPortaSplit_UrlEncode {
       HTTP-Timeout in Sekunden. Standard: 8.</li>
     <li><code>disable</code>, <code>disabledForIntervals</code><br>
       Deaktiviert Polling und Steuerung.</li>
+    <li><code>devStateIcon</code>, <code>webCmd</code><br>
+      Das Modul setzt diese standardmaessig auf eine textbasierte
+      Statusanzeige und kompakte Temperatur-/Mode-/Luefter-Bedienelemente in
+      FHEMWEB.</li>
     <li><a href="#readingFnAttributes">readingFnAttributes</a></li>
   </ul>
 </ul>
