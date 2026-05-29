@@ -14,7 +14,7 @@ our $readingFnAttributes;
 our %defs;
 our $init_done;
 
-my $MideaPortaSplit_Version = '0.2.0';
+my $MideaPortaSplit_Version = '0.2.1';
 my $MideaPortaSplit_DefaultInterval = 30;
 my $MideaPortaSplit_DefaultTimeout = 8;
 
@@ -324,6 +324,8 @@ sub MideaPortaSplit_Response {
 sub MideaPortaSplit_UpdateReadings {
   my ($hash, $data) = @_;
 
+  $hash->{VERSION} = $MideaPortaSplit_Version;
+
   readingsBeginUpdate($hash);
   for my $key (sort keys %{$data}) {
     next if $key =~ m/^(key|token)$/;
@@ -362,13 +364,57 @@ sub MideaPortaSplit_StateText {
   my ($data) = @_;
 
   return 'offline' if ($data->{availability} // '') ne 'online';
-  return 'off' if exists($data->{power}) && !$data->{power};
+  if (exists($data->{power}) && !$data->{power}) {
+    my $indoor = MideaPortaSplit_TemperatureText($data->{indoor_temperature});
+    return defined($indoor) ? "off | $indoor indoor" : 'off';
+  }
 
   my $mode = $data->{mode} // 'on';
-  my $target = defined($data->{target_temperature}) ? $data->{target_temperature} . ' C' : '';
-  my $indoor = defined($data->{indoor_temperature}) ? 'indoor ' . $data->{indoor_temperature} . ' C' : '';
+  my @parts = ($mode);
 
-  return join(' ', grep { $_ ne '' } ($mode, $target, $indoor));
+  my $indoor = MideaPortaSplit_TemperatureText($data->{indoor_temperature});
+  my $target = MideaPortaSplit_TemperatureText($data->{target_temperature});
+  if (defined($indoor) && defined($target)) {
+    push @parts, "$indoor -> $target";
+  } elsif (defined($indoor)) {
+    push @parts, "$indoor indoor";
+  } elsif (defined($target)) {
+    push @parts, "$target target";
+  }
+
+  my @tags = MideaPortaSplit_FeatureTags($data);
+  push @parts, join(' ', @tags) if @tags;
+
+  my $power = MideaPortaSplit_PowerText($data->{real_time_power_usage});
+  push @parts, $power if defined($power);
+
+  return join(' | ', @parts);
+}
+
+sub MideaPortaSplit_FeatureTags {
+  my ($data) = @_;
+  my @tags;
+
+  push @tags, 'eco' if $data->{eco};
+  push @tags, 'turbo' if $data->{turbo};
+  push @tags, 'sleep' if $data->{sleep};
+  push @tags, 'silent' if $data->{out_silent};
+
+  return @tags;
+}
+
+sub MideaPortaSplit_TemperatureText {
+  my ($value) = @_;
+  return undef if !defined($value) || !looks_like_number($value);
+  return sprintf('%.1f', $value) . "\xC2\xB0C";
+}
+
+sub MideaPortaSplit_PowerText {
+  my ($value) = @_;
+  return undef if !defined($value) || !looks_like_number($value);
+  my $text = sprintf('%.1f', $value);
+  $text =~ s/\.0$//;
+  return "$text W";
 }
 
 sub MideaPortaSplit_Interval {
@@ -457,6 +503,9 @@ sub MideaPortaSplit_UrlEncode {
   <a id="MideaPortaSplit-readings"></a>
   <b>Readings</b>
   <ul>
+    <li><code>state</code>: compact display text. Examples:
+      <code>offline</code>, <code>off | 24.0&deg;C indoor</code>,
+      <code>cool | 26.0&deg;C -&gt; 22.0&deg;C | eco silent | 194 W</code>.</li>
     <li><code>availability</code>: bridge/appliance availability, usually
       <code>online</code> or <code>offline</code>.</li>
     <li><code>power</code>: appliance power state, <code>1</code> or
@@ -565,6 +614,9 @@ sub MideaPortaSplit_UrlEncode {
   <a id="MideaPortaSplit-readings"></a>
   <b>Readings</b>
   <ul>
+    <li><code>state</code>: kompakte Anzeige. Beispiele:
+      <code>offline</code>, <code>off | 24.0&deg;C indoor</code>,
+      <code>cool | 26.0&deg;C -&gt; 22.0&deg;C | eco silent | 194 W</code>.</li>
     <li><code>availability</code>: Erreichbarkeit aus Sicht der Bridge,
       normalerweise <code>online</code> oder <code>offline</code>.</li>
     <li><code>power</code>: Schaltzustand, <code>1</code> oder

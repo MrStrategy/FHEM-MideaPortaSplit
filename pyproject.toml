@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fhem-midea-portasplit"
-version = "0.2.0"
+version = "0.2.1"
 description = "FHEM module and MQTT/HTTP bridge for Midea PortaSplit air conditioners."
 readme = "README.md"
 requires-python = ">=3.11"

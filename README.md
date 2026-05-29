@@ -52,7 +52,7 @@ Build and run the bridge on the Docker host:
 ```sh
 git clone https://github.com/MrStrategy/FHEM-MideaPortaSplit.git
 cd FHEM-MideaPortaSplit
-docker build -t fhem-midea-portasplit:0.2.0 -t fhem-midea-portasplit:latest .
+docker build -t fhem-midea-portasplit:0.2.1 -t fhem-midea-portasplit:latest .
 cp .env.example .env
 cp deploy/rpi/docker-compose.yml docker-compose.yml
 ```
@@ -95,6 +95,7 @@ HTTPMOD remains available as a fallback; see `deploy/rpi/fhem-httpmod.cfg`.
 The native FHEM device offers readings like:
 
 ```text
+state
 power
 mode
 target_temperature
@@ -118,6 +119,14 @@ set midea.portasplit mode cool
 set midea.portasplit fan_speed auto
 set midea.portasplit out_silent on
 set midea.portasplit update
+```
+
+The default `state` display is compact:
+
+```text
+offline
+off | 24.0°C indoor
+cool | 26.0°C -> 22.0°C | eco silent | 194 W
 ```
 
 ## Configuration

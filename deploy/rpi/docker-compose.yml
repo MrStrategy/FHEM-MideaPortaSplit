@@ -1,6 +1,6 @@
 services:
   midea-portasplit-bridge:
-    image: fhem-midea-portasplit:0.2.0
+    image: fhem-midea-portasplit:0.2.1
     container_name: midea-portasplit-bridge
     restart: unless-stopped
     network_mode: host
