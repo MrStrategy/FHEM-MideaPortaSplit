@@ -34,7 +34,7 @@ total_energy_usage: 15.04
 out_silent: false
 ```
 
-## Quick Start
+## Quick Start With Docker
 
 ```sh
 cp .env.example .env
@@ -42,6 +42,66 @@ docker compose -f docker-compose.example.yml up --build
 ```
 
 The sample compose file uses `network_mode: host`, because the PortaSplit usually lives in an IoT VLAN and local routing/broadcast is easiest from the host network.
+
+## Raspberry Pi / FHEM Quick Start
+
+Build and run the bridge on the Docker host:
+
+```sh
+git clone https://github.com/MrStrategy/FHEM-MideaPortaSplit.git
+cd FHEM-MideaPortaSplit
+docker build -t fhem-midea-portasplit:0.1.0 -t fhem-midea-portasplit:latest .
+cp .env.example .env
+cp deploy/rpi/docker-compose.yml docker-compose.yml
+```
+
+Edit `.env` and set your PortaSplit IP:
+
+```text
+MIDEA_HOST=10.20.0.49
+HTTP_ENABLE=true
+HTTP_PORT=8765
+MQTT_ENABLE=false
+```
+
+Start the service:
+
+```sh
+docker compose up -d
+curl http://127.0.0.1:8765/state
+```
+
+Then add the HTTPMOD example to FHEM. For an RPi at `10.0.0.80`, a ready-to-use example is in:
+
+```text
+deploy/rpi/fhem-httpmod.cfg
+```
+
+The resulting FHEM device offers readings like:
+
+```text
+power
+mode
+target_temperature
+indoor_temperature
+outdoor_temperature
+real_time_power_usage
+total_energy_usage
+fan_speed
+swing_mode
+out_silent
+availability
+```
+
+And set commands like:
+
+```text
+set midea.portasplit power off
+set midea.portasplit target_temperature 22
+set midea.portasplit mode cool
+set midea.portasplit fan_speed auto
+set midea.portasplit out_silent on
+```
 
 ## Configuration
 
@@ -72,6 +132,13 @@ MIDEA_KEY=
 ```
 
 Leave these empty unless you know what you are doing. Tokens and keys are credentials.
+
+## Security Notes
+
+The bridge intentionally suppresses verbose `msmart-ng` logs unless `LOG_LEVEL=DEBUG`,
+because Midea V3 authentication may expose session keys or tokens in debug output.
+
+Do not commit `.env` files with `MIDEA_TOKEN`, `MIDEA_KEY`, cloud account names, or passwords.
 
 ## MQTT Topics
 
@@ -154,4 +221,3 @@ pip install -e '.[dev]'
 pytest
 ruff check .
 ```
-
