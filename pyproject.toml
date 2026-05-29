@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fhem-midea-portasplit"
-version = "0.1.0"
-description = "MQTT/HTTP bridge for Midea PortaSplit air conditioners and FHEM."
+version = "0.2.0"
+description = "FHEM module and MQTT/HTTP bridge for Midea PortaSplit air conditioners."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -35,4 +35,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-

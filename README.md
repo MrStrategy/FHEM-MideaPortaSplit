@@ -4,10 +4,12 @@ Small Docker-friendly bridge for a Midea PortaSplit air conditioner.
 
 It talks to the PortaSplit locally via `msmart-ng` and exposes the device to FHEM via:
 
+- a native FHEM module (`MideaPortaSplit`)
 - MQTT topics for `MQTT2_DEVICE`
 - a small HTTP API for `HTTPMOD` or debugging
 
-No Python packages are installed into the FHEM container.
+No Python packages are installed into the FHEM container. The FHEM module only talks
+to the bridge HTTP API.
 
 ## Known Working Device
 
@@ -50,7 +52,7 @@ Build and run the bridge on the Docker host:
 ```sh
 git clone https://github.com/MrStrategy/FHEM-MideaPortaSplit.git
 cd FHEM-MideaPortaSplit
-docker build -t fhem-midea-portasplit:0.1.0 -t fhem-midea-portasplit:latest .
+docker build -t fhem-midea-portasplit:0.2.0 -t fhem-midea-portasplit:latest .
 cp .env.example .env
 cp deploy/rpi/docker-compose.yml docker-compose.yml
 ```
@@ -71,13 +73,26 @@ docker compose up -d
 curl http://127.0.0.1:8765/state
 ```
 
-Then add the HTTPMOD example to FHEM. For an RPi at `10.0.0.80`, a ready-to-use example is in:
+Then install the native FHEM module and define the device:
 
-```text
-deploy/rpi/fhem-httpmod.cfg
+```sh
+cp fhem/70_MideaPortaSplit.pm /path/to/fhem/FHEM/
 ```
 
-The resulting FHEM device offers readings like:
+```text
+define midea.portasplit MideaPortaSplit http://10.0.0.80:8765
+attr midea.portasplit room Klima
+```
+
+For an RPi at `10.0.0.80`, a ready-to-use example is in:
+
+```text
+deploy/rpi/fhem-module.cfg
+```
+
+HTTPMOD remains available as a fallback; see `deploy/rpi/fhem-httpmod.cfg`.
+
+The native FHEM device offers readings like:
 
 ```text
 power
@@ -96,11 +111,13 @@ availability
 And set commands like:
 
 ```text
+set midea.portasplit off
 set midea.portasplit power off
 set midea.portasplit target_temperature 22
 set midea.portasplit mode cool
 set midea.portasplit fan_speed auto
 set midea.portasplit out_silent on
+set midea.portasplit update
 ```
 
 ## Configuration
@@ -203,14 +220,25 @@ http://bridge-host:8765/set?target_temperature=22
 
 ## FHEM
 
-Examples are in:
+Preferred native module:
+
+```text
+fhem/70_MideaPortaSplit.pm
+deploy/rpi/fhem-module.cfg
+```
+
+The module includes FHEM commandref help with define, set, get, attribute, and
+reading descriptions.
+
+Fallback examples are in:
 
 ```text
 fhem/mqtt2-example.cfg
 fhem/httpmod-example.cfg
 ```
 
-MQTT2 is the preferred integration. HTTPMOD is useful when you do not want to run a broker.
+The native module is the preferred FHEM integration. HTTPMOD is useful for quick
+debugging, and MQTT2 is useful when you already run a broker.
 
 ## Development
 
