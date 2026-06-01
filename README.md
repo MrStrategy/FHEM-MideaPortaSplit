@@ -52,7 +52,7 @@ Build and run the bridge on the Docker host:
 ```sh
 git clone https://github.com/MrStrategy/FHEM-MideaPortaSplit.git
 cd FHEM-MideaPortaSplit
-docker build -t fhem-midea-portasplit:0.2.2 -t fhem-midea-portasplit:latest .
+docker build -t fhem-midea-portasplit:0.3.0 -t fhem-midea-portasplit:latest .
 cp .env.example .env
 cp deploy/rpi/docker-compose.yml docker-compose.yml
 ```
@@ -83,7 +83,7 @@ cp fhem/70_MideaPortaSplit.pm /path/to/fhem/FHEM/
 define midea.portasplit MideaPortaSplit http://10.0.0.80:8765
 attr midea.portasplit room Klima
 attr midea.portasplit devStateIcon .*:noIcon:noFhemwebLink
-attr midea.portasplit webCmd target_temperature:mode:fan_speed
+attr midea.portasplit webCmd target_temperature:mode:fan_speed:up_and_down:boost:eco
 ```
 
 For an RPi at `10.0.0.80`, a ready-to-use example is in:
@@ -109,6 +109,12 @@ fan_speed
 swing_mode
 out_silent
 availability
+boost / turbo
+ion / purifier
+led / display_on
+sound / beep
+smart_sleep / sleep
+gear / rate_select
 ```
 
 And set commands like:
@@ -119,6 +125,12 @@ set midea.portasplit power off
 set midea.portasplit target_temperature 22
 set midea.portasplit mode cool
 set midea.portasplit fan_speed auto
+set midea.portasplit up_and_down on
+set midea.portasplit boost on
+set midea.portasplit ion on
+set midea.portasplit led on
+set midea.portasplit sound on
+set midea.portasplit gear level_3
 set midea.portasplit out_silent on
 set midea.portasplit update
 ```
@@ -128,12 +140,33 @@ The default `state` display is compact:
 ```text
 offline
 off | 24.0°C indoor
-cool | 26.0°C -> 22.0°C | eco silent | 194 W
+cool | 26.0°C -> 22.0°C | Boost Silent | 194 W
 ```
 
 The module defaults `devStateIcon` to text display and `webCmd` to
-`target_temperature:mode:fan_speed`, so FHEMWEB does not render it as a generic
-on/off lamp.
+`target_temperature:mode:fan_speed:up_and_down:boost:eco`, so FHEMWEB does not
+render it as a generic on/off lamp.
+
+App-style set aliases are available beside the technical `msmart-ng` names:
+
+| Midea app label | FHEM set alias | Technical reading/field |
+| --- | --- | --- |
+| Mode | `mode` | `mode` |
+| Fan Speed | `fan_speed` | `fan_speed` |
+| Up and Down | `up_and_down on|off` | `swing_mode vertical|off` |
+| iECO / ECO | `ieco`, `eco` | `eco` |
+| Boost | `boost` | `turbo` |
+| Gear | `gear` | `rate_select` |
+| Smart Sleep | `smart_sleep` | `sleep` |
+| ION | `ion` | `purifier` |
+| LED | `led` | `display_on` |
+| Sound | `sound` | `beep` |
+| Freeze Protection | `freeze_protection` | `freeze_protection` |
+| Energy Monitor | readings only | `real_time_power_usage`, `current_energy_usage`, `total_energy_usage` |
+
+`Smart Guard`, `My Favorites`, `Active Clean` and `Temp. Range` are visible in the
+app but are not exposed as reliable local commands by the currently used
+`msmart-ng` interface.
 
 ## Configuration
 
@@ -203,16 +236,23 @@ vertical_swing_angle
 cascade_mode
 target_humidity
 eco
+ieco
 turbo
+boost
 freeze_protection
 sleep
+smart_sleep
 display_on
+led
 beep
+sound
 fahrenheit
 follow_me
 purifier
+ion
 out_silent
 rate_select
+gear
 aux_mode
 ```
 

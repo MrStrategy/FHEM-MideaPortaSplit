@@ -47,7 +47,28 @@ def test_normalize_aliases():
     assert command["swing_mode"] == AC.SwingMode.BOTH
 
 
+def test_normalize_app_aliases():
+    command = normalize_command(
+        {
+            "boost": "on",
+            "led": "off",
+            "ion": "on",
+            "smart_sleep": "off",
+            "up_and_down": "on",
+            "gear": "level_3",
+            "ieco": "on",
+        }
+    )
+
+    assert command["turbo"] is True
+    assert command["display_on"] is False
+    assert command["purifier"] is True
+    assert command["sleep"] is False
+    assert command["swing_mode"] == AC.SwingMode.VERTICAL
+    assert command["rate_select"] == AC.RateSelect.LEVEL_3
+    assert command["eco"] is True
+
+
 def test_unknown_command_fails():
     with pytest.raises(CommandError):
         normalize_command({"banana": "yes"})
-

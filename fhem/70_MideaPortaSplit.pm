@@ -14,10 +14,10 @@ our $readingFnAttributes;
 our %defs;
 our $init_done;
 
-my $MideaPortaSplit_Version = '0.2.2';
+my $MideaPortaSplit_Version = '0.3.0';
 my $MideaPortaSplit_DefaultInterval = 30;
 my $MideaPortaSplit_DefaultTimeout = 8;
-my $MideaPortaSplit_DefaultWebCmd = 'target_temperature:mode:fan_speed';
+my $MideaPortaSplit_DefaultWebCmd = 'target_temperature:mode:fan_speed:up_and_down:boost:eco';
 my $MideaPortaSplit_DefaultDevStateIcon = '.*:noIcon:noFhemwebLink';
 
 my %MideaPortaSplit_SetMap = (
@@ -29,16 +29,30 @@ my %MideaPortaSplit_SetMap = (
   mode               => { field => 'mode', type => 'enum', hint => 'auto,cool,dry,heat,fan_only' },
   fan_speed          => { field => 'fan_speed', type => 'enum', hint => 'auto,silent,low,medium,high,max' },
   swing_mode         => { field => 'swing_mode', type => 'enum', hint => 'off,vertical,horizontal,both' },
+  up_and_down        => { field => 'swing_mode', type => 'swing_bool', hint => 'on,off' },
   out_silent         => { field => 'out_silent', type => 'bool', hint => 'on,off' },
   eco                => { field => 'eco', type => 'bool', hint => 'on,off' },
+  ieco               => { field => 'eco', type => 'bool', hint => 'on,off' },
   turbo              => { field => 'turbo', type => 'bool', hint => 'on,off' },
+  boost              => { field => 'turbo', type => 'bool', hint => 'on,off' },
+  sleep              => { field => 'sleep', type => 'bool', hint => 'on,off' },
+  smart_sleep        => { field => 'sleep', type => 'bool', hint => 'on,off' },
+  freeze_protection  => { field => 'freeze_protection', type => 'bool', hint => 'on,off' },
   display_on         => { field => 'display_on', type => 'bool', hint => 'on,off' },
+  led                => { field => 'display_on', type => 'bool', hint => 'on,off' },
+  beep               => { field => 'beep', type => 'bool', hint => 'on,off' },
+  sound              => { field => 'beep', type => 'bool', hint => 'on,off' },
+  purifier           => { field => 'purifier', type => 'bool', hint => 'on,off' },
+  ion                => { field => 'purifier', type => 'bool', hint => 'on,off' },
+  rate_select        => { field => 'rate_select', type => 'enum', hint => 'off,gear_50,gear_75,level_1,level_2,level_3,level_4,level_5' },
+  gear               => { field => 'rate_select', type => 'enum', hint => 'off,gear_50,gear_75,level_1,level_2,level_3,level_4,level_5' },
 );
 
 my %MideaPortaSplit_Allowed = (
   mode       => { map { $_ => 1 } qw(auto cool dry heat fan_only) },
   fan_speed  => { map { $_ => 1 } qw(auto silent low medium high max) },
   swing_mode => { map { $_ => 1 } qw(off vertical horizontal both) },
+  rate_select => { map { $_ => 1 } qw(off gear_50 gear_75 level_1 level_2 level_3 level_4 level_5) },
 );
 
 sub MideaPortaSplit_Initialize {
@@ -170,7 +184,7 @@ sub MideaPortaSplit_Get {
 
 sub MideaPortaSplit_SetChoices {
   my @choices;
-  for my $cmd (qw(on off update power target_temperature mode fan_speed swing_mode out_silent eco turbo display_on)) {
+  for my $cmd (qw(on off update power target_temperature mode fan_speed up_and_down swing_mode out_silent eco ieco boost turbo smart_sleep sleep gear rate_select led display_on ion purifier sound beep freeze_protection)) {
     my $spec = $MideaPortaSplit_SetMap{$cmd};
     if ($spec->{noArg}) {
       push @choices, "$cmd:noArg";
@@ -190,6 +204,12 @@ sub MideaPortaSplit_NormalizeSetValue {
     my $normalized = MideaPortaSplit_NormalizeBool($value);
     return ("value must be on or off", undef) if !defined($normalized);
     return (undef, $normalized);
+  }
+
+  if ($spec->{type} && $spec->{type} eq 'swing_bool') {
+    my $normalized = MideaPortaSplit_NormalizeBool($value);
+    return ("value must be on or off", undef) if !defined($normalized);
+    return (undef, $normalized eq 'on' ? 'vertical' : 'off');
   }
 
   if ($spec->{type} && $spec->{type} eq 'temperature') {
@@ -399,10 +419,11 @@ sub MideaPortaSplit_FeatureTags {
   my ($data) = @_;
   my @tags;
 
-  push @tags, 'eco' if $data->{eco};
-  push @tags, 'turbo' if $data->{turbo};
-  push @tags, 'sleep' if $data->{sleep};
-  push @tags, 'silent' if $data->{out_silent};
+  push @tags, 'ECO' if $data->{eco};
+  push @tags, 'Boost' if $data->{turbo};
+  push @tags, 'Smart Sleep' if $data->{sleep};
+  push @tags, 'Silent' if $data->{out_silent};
+  push @tags, 'ION' if $data->{purifier};
 
   return @tags;
 }
@@ -482,13 +503,23 @@ sub MideaPortaSplit_UrlEncode {
       Selects the operation mode.</li>
     <li><code>set &lt;name&gt; fan_speed auto|silent|low|medium|high|max</code><br>
       Selects the fan speed.</li>
+    <li><code>set &lt;name&gt; up_and_down on|off</code><br>
+      App-style shortcut for vertical swing.</li>
     <li><code>set &lt;name&gt; swing_mode off|vertical|horizontal|both</code><br>
       Selects the swing mode.</li>
     <li><code>set &lt;name&gt; out_silent on|off</code><br>
       Toggles quiet outdoor-unit mode, if supported by the appliance.</li>
-    <li><code>set &lt;name&gt; eco on|off</code>, <code>turbo on|off</code>,
-      <code>display_on on|off</code><br>
-      Toggles the corresponding appliance option.</li>
+    <li><code>set &lt;name&gt; boost on|off</code>, <code>eco on|off</code>,
+      <code>ieco on|off</code>, <code>smart_sleep on|off</code><br>
+      App-style aliases for Boost, ECO/iECO and Smart Sleep.</li>
+    <li><code>set &lt;name&gt; gear off|gear_50|gear_75|level_1|...|level_5</code><br>
+      Adjusts the power-saving Gear level.</li>
+    <li><code>set &lt;name&gt; ion on|off</code>, <code>led on|off</code>,
+      <code>sound on|off</code>, <code>freeze_protection on|off</code><br>
+      Toggles the corresponding appliance option. Technical aliases such as
+      <code>purifier</code>, <code>display_on</code>, <code>beep</code>,
+      <code>turbo</code>, <code>sleep</code> and <code>rate_select</code> stay
+      available for compatibility.</li>
     <li><code>set &lt;name&gt; update</code><br>
       Requests a state refresh immediately.</li>
   </ul>
@@ -509,7 +540,7 @@ sub MideaPortaSplit_UrlEncode {
   <ul>
     <li><code>state</code>: compact display text. Examples:
       <code>offline</code>, <code>off | 24.0&deg;C indoor</code>,
-      <code>cool | 26.0&deg;C -&gt; 22.0&deg;C | eco silent | 194 W</code>.</li>
+      <code>cool | 26.0&deg;C -&gt; 22.0&deg;C | Boost Silent | 194 W</code>.</li>
     <li><code>availability</code>: bridge/appliance availability, usually
       <code>online</code> or <code>offline</code>.</li>
     <li><code>power</code>: appliance power state, <code>1</code> or
@@ -533,7 +564,8 @@ sub MideaPortaSplit_UrlEncode {
       reported by the appliance.</li>
     <li><code>eco</code>, <code>turbo</code>, <code>sleep</code>,
       <code>freeze_protection</code>, <code>out_silent</code>,
-      <code>display_on</code>, <code>purifier</code>: appliance feature
+      <code>display_on</code>, <code>beep</code>, <code>purifier</code>,
+      <code>rate_select</code>: appliance feature
       states.</li>
     <li><code>error_code</code>, <code>last_error</code>: appliance and bridge
       error information.</li>
@@ -595,14 +627,24 @@ sub MideaPortaSplit_UrlEncode {
       Setzt die Betriebsart.</li>
     <li><code>set &lt;name&gt; fan_speed auto|silent|low|medium|high|max</code><br>
       Setzt die L&uuml;fterstufe.</li>
+    <li><code>set &lt;name&gt; up_and_down on|off</code><br>
+      App-naher Kurzbefehl f&uuml;r den vertikalen Swing.</li>
     <li><code>set &lt;name&gt; swing_mode off|vertical|horizontal|both</code><br>
       Setzt den Swing-Modus.</li>
     <li><code>set &lt;name&gt; out_silent on|off</code><br>
       Schaltet den leisen Betrieb der Au&szlig;eneinheit, falls vom Ger&auml;t
       unterst&uuml;tzt.</li>
-    <li><code>set &lt;name&gt; eco on|off</code>, <code>turbo on|off</code>,
-      <code>display_on on|off</code><br>
-      Schaltet die jeweilige Ger&auml;teoption.</li>
+    <li><code>set &lt;name&gt; boost on|off</code>, <code>eco on|off</code>,
+      <code>ieco on|off</code>, <code>smart_sleep on|off</code><br>
+      App-nahe Aliase f&uuml;r Boost, ECO/iECO und Smart Sleep.</li>
+    <li><code>set &lt;name&gt; gear off|gear_50|gear_75|level_1|...|level_5</code><br>
+      Setzt die energiesparende Gear-Stufe.</li>
+    <li><code>set &lt;name&gt; ion on|off</code>, <code>led on|off</code>,
+      <code>sound on|off</code>, <code>freeze_protection on|off</code><br>
+      Schaltet die jeweilige Ger&auml;teoption. Technische Aliase wie
+      <code>purifier</code>, <code>display_on</code>, <code>beep</code>,
+      <code>turbo</code>, <code>sleep</code> und <code>rate_select</code>
+      bleiben kompatibel verf&uuml;gbar.</li>
     <li><code>set &lt;name&gt; update</code><br>
       Fordert sofort einen neuen Status an.</li>
   </ul>
@@ -623,7 +665,7 @@ sub MideaPortaSplit_UrlEncode {
   <ul>
     <li><code>state</code>: kompakte Anzeige. Beispiele:
       <code>offline</code>, <code>off | 24.0&deg;C indoor</code>,
-      <code>cool | 26.0&deg;C -&gt; 22.0&deg;C | eco silent | 194 W</code>.</li>
+      <code>cool | 26.0&deg;C -&gt; 22.0&deg;C | Boost Silent | 194 W</code>.</li>
     <li><code>availability</code>: Erreichbarkeit aus Sicht der Bridge,
       normalerweise <code>online</code> oder <code>offline</code>.</li>
     <li><code>power</code>: Schaltzustand, <code>1</code> oder
@@ -647,7 +689,8 @@ sub MideaPortaSplit_UrlEncode {
       aktuellen Zeitraum, falls vom Ger&auml;t gemeldet.</li>
     <li><code>eco</code>, <code>turbo</code>, <code>sleep</code>,
       <code>freeze_protection</code>, <code>out_silent</code>,
-      <code>display_on</code>, <code>purifier</code>: Ger&auml;tefunktionen.</li>
+      <code>display_on</code>, <code>beep</code>, <code>purifier</code>,
+      <code>rate_select</code>: Ger&auml;tefunktionen.</li>
     <li><code>error_code</code>, <code>last_error</code>: Fehlerstatus von
       Ger&auml;t und Bridge.</li>
     <li><code>timestamp</code>: UTC-Zeitstempel des Bridge-Status.</li>

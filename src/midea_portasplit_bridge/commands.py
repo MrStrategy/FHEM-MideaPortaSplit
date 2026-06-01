@@ -78,6 +78,10 @@ def parse_enum(value: Any, enum_type: type[Enum]) -> Enum | int:
     raise CommandError(f"Invalid {enum_type.__name__}: {value!r}. Allowed: {allowed}")
 
 
+def parse_up_and_down(value: Any) -> AC.SwingMode:
+    return AC.SwingMode.VERTICAL if parse_bool(value) else AC.SwingMode.OFF
+
+
 COMMANDS: dict[str, tuple[str, Any]] = {
     "power": ("power_state", parse_bool),
     "power_state": ("power_state", parse_bool),
@@ -95,19 +99,27 @@ COMMANDS: dict[str, tuple[str, Any]] = {
         "vertical_swing_angle",
         lambda value: parse_enum(value, AC.SwingAngle),
     ),
+    "up_and_down": ("swing_mode", parse_up_and_down),
     "cascade_mode": ("cascade_mode", lambda value: parse_enum(value, AC.CascadeMode)),
     "rate_select": ("rate_select", lambda value: parse_enum(value, AC.RateSelect)),
+    "gear": ("rate_select", lambda value: parse_enum(value, AC.RateSelect)),
     "aux_mode": ("aux_mode", lambda value: parse_enum(value, AC.AuxHeatMode)),
     "eco": ("eco", parse_bool),
+    "ieco": ("eco", parse_bool),
     "turbo": ("turbo", parse_bool),
+    "boost": ("turbo", parse_bool),
     "freeze_protection": ("freeze_protection", parse_bool),
     "sleep": ("sleep", parse_bool),
+    "smart_sleep": ("sleep", parse_bool),
     "display_on": ("display_on", parse_bool),
     "display": ("display_on", parse_bool),
+    "led": ("display_on", parse_bool),
     "beep": ("beep", parse_bool),
+    "sound": ("beep", parse_bool),
     "fahrenheit": ("fahrenheit", parse_bool),
     "follow_me": ("follow_me", parse_bool),
     "purifier": ("purifier", parse_bool),
+    "ion": ("purifier", parse_bool),
     "out_silent": ("out_silent", parse_bool),
 }
 
@@ -142,4 +154,3 @@ async def apply_command(device: AC, command: dict[str, Any]) -> None:
 
     if display_target is not None and display_target != device.display_on:
         await device.toggle_display()
-
