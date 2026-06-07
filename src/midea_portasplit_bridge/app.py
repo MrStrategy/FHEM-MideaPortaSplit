@@ -20,6 +20,7 @@ class BridgeApp:
         self._state_store = StateStore()
         self._mqtt: MqttBridge | None = None
         self._http: HTTPApi | None = None
+        self._last_poll_error: str | None = None
 
     async def handle_command(self, command: dict) -> dict:
         _LOGGER.info("Applying command: %s", command)
@@ -37,7 +38,10 @@ class BridgeApp:
             try:
                 state = await self._device.refresh()
                 self._publish(state)
-                _LOGGER.info(
+                if self._last_poll_error is not None:
+                    _LOGGER.info("PortaSplit polling recovered.")
+                    self._last_poll_error = None
+                _LOGGER.debug(
                     "Polled PortaSplit: power=%s mode=%s target=%s indoor=%s power_w=%s",
                     state.get("power"),
                     state.get("mode"),
@@ -46,8 +50,13 @@ class BridgeApp:
                     state.get("real_time_power_usage"),
                 )
             except Exception as exc:
-                _LOGGER.exception("Polling failed.")
-                state = error_state(str(exc))
+                error = str(exc) or exc.__class__.__name__
+                if error != self._last_poll_error:
+                    _LOGGER.warning("PortaSplit unavailable: %s", error)
+                    self._last_poll_error = error
+                else:
+                    _LOGGER.debug("PortaSplit still unavailable: %s", error, exc_info=True)
+                state = error_state(error)
                 self._publish(state)
 
             try:
@@ -87,7 +96,7 @@ async def main() -> None:
     )
     if config.log_level != "DEBUG":
         logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.getLogger("msmart").setLevel(logging.WARNING)
+        logging.getLogger("msmart").setLevel(logging.CRITICAL)
 
     app = BridgeApp(config)
     stop_event = asyncio.Event()

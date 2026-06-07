@@ -24,7 +24,7 @@ class MideaPortaSplit:
 
     async def _connect(self) -> AC:
         if self._config.has_direct_auth:
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Connecting to Midea AC %s:%s with direct credentials.",
                 self._config.midea_host,
                 self._config.midea_port,
@@ -37,7 +37,7 @@ class MideaPortaSplit:
             )
             await device.authenticate(self._config.midea_token, self._config.midea_key)
         else:
-            _LOGGER.info("Discovering Midea AC at %s.", self._config.midea_host)
+            _LOGGER.debug("Discovering Midea AC at %s.", self._config.midea_host)
             device = await Discover.discover_single(
                 self._config.midea_host,
                 region=self._config.midea_region,

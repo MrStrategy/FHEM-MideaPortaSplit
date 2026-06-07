@@ -14,7 +14,7 @@ our $readingFnAttributes;
 our %defs;
 our $init_done;
 
-my $MideaPortaSplit_Version = '0.3.0';
+my $MideaPortaSplit_Version = '0.3.1';
 my $MideaPortaSplit_DefaultInterval = 30;
 my $MideaPortaSplit_DefaultTimeout = 8;
 my $MideaPortaSplit_DefaultWebCmd = 'target_temperature:mode:fan_speed:up_and_down:boost:eco';

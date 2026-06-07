@@ -28,7 +28,7 @@ class Handler(BaseHTTPRequestHandler):
     server: BridgeHTTPServer
 
     def log_message(self, fmt: str, *args: Any) -> None:
-        _LOGGER.info("HTTP %s - %s", self.address_string(), fmt % args)
+        _LOGGER.debug("HTTP %s - %s", self.address_string(), fmt % args)
 
     def _send_json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, sort_keys=True).encode("utf-8")
@@ -114,4 +114,3 @@ class HTTPApi:
         self._server.shutdown()
         self._server.server_close()
         self._thread.join(timeout=5)
-

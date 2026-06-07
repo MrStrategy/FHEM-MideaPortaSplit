@@ -52,7 +52,7 @@ Build and run the bridge on the Docker host:
 ```sh
 git clone https://github.com/MrStrategy/FHEM-MideaPortaSplit.git
 cd FHEM-MideaPortaSplit
-docker build -t fhem-midea-portasplit:0.3.0 -t fhem-midea-portasplit:latest .
+docker build -t fhem-midea-portasplit:0.3.1 -t fhem-midea-portasplit:latest .
 cp .env.example .env
 cp deploy/rpi/docker-compose.yml docker-compose.yml
 ```
@@ -200,8 +200,9 @@ Leave these empty unless you know what you are doing. Tokens and keys are creden
 
 ## Security Notes
 
-The bridge intentionally suppresses verbose `msmart-ng` logs unless `LOG_LEVEL=DEBUG`,
-because Midea V3 authentication may expose session keys or tokens in debug output.
+The bridge intentionally suppresses verbose `msmart-ng` logs unless `LOG_LEVEL=DEBUG`.
+This also keeps expected offline periods quiet when the PortaSplit is unplugged. Midea V3
+debug output may expose session keys or tokens.
 
 Do not commit `.env` files with `MIDEA_TOKEN`, `MIDEA_KEY`, cloud account names, or passwords.
 
